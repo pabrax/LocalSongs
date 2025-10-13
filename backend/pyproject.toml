@@ -1,0 +1,14 @@
+[project]
+name = "media-downloader-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.103.2",
+    "ffmpeg-python>=0.2.0",
+    "pydantic-settings>=2.11.0",
+    "spotdl>=4.4.2",
+    "uvicorn>=0.23.2",
+    "yt-dlp>=2025.9.26",
+]

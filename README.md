@@ -1,316 +1,469 @@
-# 🎵 Music Downloader
+# LocalSongs
 
-A modern, full-stack music downloader application that supports YouTube and Spotify, built with FastAPI backend and Next.js frontend.
+> **Un descargador de música moderno y completo con soporte para múltiples plataformas**
 
-## ✨ Features
+LocalSongs es una aplicación web full-stack que permite descargar música de alta calidad desde YouTube, YouTube Music y Spotify. Construida con tecnologías modernas, ofrece una experiencia de usuario fluida con progreso en tiempo real y organización automática de archivos.
 
-- **Multi-Platform Support**: Download music from YouTube, YouTube Music, and Spotify
-- **High-Quality Audio**: Support for 96kbps to 320kbps audio quality
-- **International URL Support**: Works with Spotify international URLs (e.g., `/intl-es/`)
-- **Clean File Management**: Automatic file naming and extension cleanup
-- **Modern UI**: Responsive Next.js frontend with TypeScript
-- **Robust Backend**: FastAPI with async operations and timeout handling
-- **Error Handling**: Comprehensive error management and logging
+## Vista Previa de la Aplicación
 
-## 🏗️ Project Structure
+![LocalSongs App Screenshot](./Docs/images/localsongs.jpeg)
 
-```
-audio_downloader/
-├── README.md                    # This file
-├── backend-md/                  # FastAPI Backend
-│   ├── app/                     # Application code
-│   ├── downloads/               # Downloaded files
-│   ├── main_api.py             # FastAPI application
-│   ├── run_server.py           # Server launcher script
-│   ├── start.sh                # Quick start script
-│   ├── pyproject.toml          # Python dependencies (uv)
-│   └── uv.lock                 # Dependency lock file
-└── frontend_md/                # Next.js Frontend
-    ├── app/                    # Next.js app directory
-    ├── components/             # React components
-    ├── start.sh                # Quick start script
-    ├── package.json            # Node.js dependencies
-    └── ...
-```
+## Características Principales
 
-## 🚀 Running the Projects
+### **Funcionalidades Core**
+- **Descarga Multi-plataforma**: YouTube, YouTube Music, Spotify y URLs internacionales
+- **Calidad de Audio Variable**: 96kbps hasta 320kbps según preferencias
+- **Progreso en Tiempo Real**: Seguimiento visual de cada descarga con SSE
+- **Albums y Playlists Completos**: Descarga automática de colecciones enteras
+- **Organización Inteligente**: Carpetas automáticas por album/playlist/artista
 
-### Prerequisites
-- **Python 3.8+** with [uv](https://github.com/astral-sh/uv) package manager
-- **Node.js 18+** with pnpm (recommended) or npm
-- **FFmpeg** (for audio conversion)
+### **Características Técnicas**
+- **Backend Robusto**: FastAPI con operaciones asíncronas y manejo de timeouts
+- **Frontend Moderno**: Next.js 15+ con TypeScript y Tailwind CSS
+- **Corrección Automática**: Detección y reparación de extensiones problemáticas
+- **Cancelación Granular**: Control total sobre descargas en progreso
+- **Gestión de Errores**: Sistema comprensivo de logging y recuperación
 
----
+## Inicio Rápido
 
-## 🐍 Backend Setup (FastAPI)
+### Prerrequisitos
+- **Python 3.13+** con gestor de paquetes [uv](https://github.com/astral-sh/uv)
+- **Node.js 18+** con **pnpm**
+- **FFmpeg** instalado en el sistema
+- **spotdl** para descarga de Spotify
 
-### 1. Navigate to backend directory:
+### Instalación
+
+#### 1. Clonar el repositorio
 ```bash
-cd backend-md
+git clone https://github.com/pabrax/LocalSongs.git
+cd LocalSongs
 ```
 
-### 2. Install dependencies with uv:
+#### 2. Configurar Backend
 ```bash
-# Install all dependencies from pyproject.toml
+cd backend
 uv sync
 ```
 
-### 3. Start the backend server:
-
-**Option 1 - Quick start (recommended):**
+#### 3. Configurar Frontend
 ```bash
-./start.sh
+cd ../frontend
+pnpm install
 ```
 
-**Option 2 - Enhanced launcher:**
+### Ejecución
+
+#### Backend (Terminal 1)
 ```bash
-uv run python run_server.py
+cd backend
+uv run python main.py
 ```
 
-**Option 3 - Direct main_api.py:**
+#### Frontend (Terminal 2)
 ```bash
-uv run python main_api.py
-```
-
-**Option 4 - Manual uvicorn:**
-```bash
-uv run uvicorn main_api:app --reload --host 0.0.0.0 --port 8000
-```
-
-The backend will be available at: `http://localhost:8000`
-- 📖 **API Documentation**: `http://localhost:8000/docs`
-- 🔍 **API Explorer**: `http://localhost:8000/redoc`
-
----
-
-## ⚛️ Frontend Setup (Next.js)
-
-### 1. Navigate to frontend directory:
-```bash
-cd frontend_md
-```
-
-### 2. Start the development server:
-
-**Quick start (recommended):**
-```bash
-./start.sh
-```
-
-**Manual start:**
-```bash
-# Using pnpm (recommended)
-pnpm install  # if first time
+cd frontend
 pnpm dev
-
-# Or using npm
-npm install   # if first time
-npm run dev
 ```
 
-The frontend will be available at: `http://localhost:3000`
+**Acceder a la aplicación:** [http://localhost:3000](http://localhost:3000)
 
-The frontend will be available at: `http://localhost:3000`
+**Documentación API:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
----
+## Características Avanzadas
 
-## 🔧 Configuration
+### **Descarga de Colecciones Completas**
+LocalSongs puede descargar albums y playlists completos con organización automática:
 
-### Backend Configuration
-Edit `backend-md/app/settings.py`:
+```
+downloads/
+├── [Nombre del Album] [album] [spotify]/
+│   ├── 01 - Artista - Canción 1 [192kbps].mp3
+│   ├── 02 - Artista - Canción 2 [192kbps].mp3
+│   └── ...
+├── [Nombre Playlist] [playlist] [youtube]/
+│   └── Individual tracks...
+└── Descargas individuales...
+```
+
+### **Progreso en Tiempo Real**
+- **Progreso global** para albums/playlists completos
+- **Progreso individual** por cada archivo
+- **Estados detallados**: preparando → descargando → convirtiendo → completado
+- **Cancelación en tiempo real** de descargas activas
+
+### **URLs Soportadas**
+
+| Plataforma | Tipo | Ejemplo |
+|------------|------|---------|
+| **Spotify** | Track | `https://open.spotify.com/track/...` |
+| **Spotify** | Album | `https://open.spotify.com/album/...` |
+| **Spotify** | Playlist | `https://open.spotify.com/playlist/...` |
+| **YouTube** | Video | `https://www.youtube.com/watch?v=...` |
+| **YouTube** | Playlist | `https://www.youtube.com/playlist?list=...` |
+| **YT Music** | Track | `https://music.youtube.com/watch?v=...` |
+
+### **Calidades de Audio**
+- **96 kbps** - Calidad básica, archivos pequeños
+- **128 kbps** - Calidad estándar
+- **192 kbps** - Calidad alta (predeterminado)
+- **320 kbps** - Calidad máxima
+
+## Arquitectura del Proyecto
+
+```
+LocalSongs/
+├── backend/                  # Backend FastAPI
+│   ├── src/
+│   │   ├── api/                 # Endpoints de API
+│   │   ├── core/                # Configuración y utilidades
+│   │   ├── services/            # Lógica de descarga
+│   │   ├── schemas/             # Esquemas de datos
+│   │   └── main.py             # Aplicación principal
+│   ├── downloads/              # Archivos descargados
+│   ├── main.py                 # Punto de entrada
+│   └── pyproject.toml          # Configuración uv
+├── frontend/                 # Frontend Next.js
+│   ├── app/                     # App Router de Next.js
+│   ├── src/
+│   │   ├── components/          # Componentes React
+│   │   ├── hooks/               # Hooks personalizados
+│   │   ├── services/            # Servicios API
+│   │   └── types/               # Tipos TypeScript
+│   └── package.json            # Dependencias Node.js
+├── Docs/                     # Documentación y assets
+└── README.md                 # Esta documentación
+```
+
+## Configuración Avanzada
+
+### Variables de Entorno
+Crea un archivo `.env` en el directorio `backend/`:
+
+```env
+# Configuración opcional de Spotify (para mejor metadata)
+SPOTIFY_CLIENT_ID=tu_client_id
+SPOTIFY_CLIENT_SECRET=tu_client_secret
+
+# Directorio de descargas personalizado
+DOWNLOADS_DIR=./downloads
+
+# Configuración de timeouts
+DOWNLOAD_TIMEOUT=300
+INFO_TIMEOUT=30
+```
+
+### Configuración del Backend
+Edita `backend/src/core/config.py` para personalizar:
+
 ```python
-# Download directory
-downloads_dir = "./downloads"
-
-# Default audio quality
-default_quality = "192"
-
-# Timeout settings
-download_timeout = 300  # 5 minutes
-info_timeout = 30      # 30 seconds
+class Settings(BaseSettings):
+    # Directorio de descargas
+    downloads_dir: str = "./downloads"
+    
+    # Calidad predeterminada
+    default_quality: str = "192"
+    
+    # Tamaño máximo de archivo (MB)
+    max_file_size_mb: int = 100
+    
+    # Formatos permitidos
+    allowed_formats: list = ["mp3", "wav", "flac"]
 ```
 
-### Environment Variables (Optional)
-Create `.env` file in backend directory:
+## Pruebas y Diagnóstico
+
+### Verificación del Sistema
 ```bash
-# Optional: Spotify credentials (for enhanced metadata)
-SPOTIFY_CLIENT_ID=your_client_id
-SPOTIFY_CLIENT_SECRET=your_client_secret
+# Verificar que spotdl esté instalado
+spotdl --version
+
+# Verificar configuración del backend
+cd backend && uv run python -c "from src.main import app; print('✅ Backend OK')"
+
+# Verificar configuración del frontend
+cd frontend && pnpm run type-check
 ```
 
----
+## API Reference
 
-## � API Documentation
+### Endpoints Principales
 
-### Download Endpoint
-```
-POST http://localhost:8000/api/download
-```
+#### Descarga Individual
+```http
+POST /api/v1/download
+Content-Type: application/json
 
-**Request Body:**
-```json
 {
   "url": "https://open.spotify.com/track/...",
+  "quality": "192",
+  "output_format": "mp3"
+}
+```
+
+#### Descarga con Progreso
+```http
+POST /api/v1/download-with-progress
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=...",
+  "quality": "320"
+}
+```
+
+#### Información de Playlist
+```http
+GET /api/v1/playlist-info?url=https://open.spotify.com/album/...
+```
+
+#### Descarga de Playlist
+```http
+POST /api/v1/download-playlist
+Content-Type: application/json
+
+{
+  "url": "https://open.spotify.com/album/...",
   "quality": "192"
 }
 ```
 
-**Response:**
+### Respuestas de la API
+
+#### Descarga Exitosa
 ```json
 {
   "success": true,
-  "message": "Download completed successfully",
-  "file_info": {
-    "filename": "Artist - Song [192kbps].mp3",
-    "size": 5242880,
-    "duration": 210
-  },
+  "message": "Descarga completada exitosamente",
+  "file_path": "downloads/Artista - Canción [192kbps].mp3",
+  "file_size": 5242880,
   "metadata": {
-    "title": "Song Title",
-    "artist": "Artist Name",
+    "title": "Nombre de la Canción",
+    "artist": "Nombre del Artista",
+    "duration": 210,
+    "quality": "192kbps",
     "platform": "spotify"
   }
 }
 ```
 
-### Supported Quality Options
-- `96` - 96 kbps (Low quality)
-- `128` - 128 kbps (Standard quality)
-- `192` - 192 kbps (High quality) - **Default**
-- `320` - 320 kbps (Maximum quality)
+#### Información de Playlist
+```json
+{
+  "type": "album",
+  "platform": "spotify", 
+  "title": "Nombre del Album",
+  "total_tracks": 12,
+  "tracks": [
+    "Artista - Canción 1",
+    "Artista - Canción 2",
+    "..."
+  ],
+  "limited": false
+}
+```
 
-### Supported URLs
+## Desarrollo y Contribución
 
-**Spotify:**
-- `https://open.spotify.com/track/...`
-- `https://open.spotify.com/intl-es/track/...` (International)
-- `https://open.spotify.com/album/...`
-- `https://open.spotify.com/playlist/...`
+### Entorno de Desarrollo
 
-**YouTube:**
-- `https://www.youtube.com/watch?v=...`
-- `https://youtu.be/...`
-- `https://music.youtube.com/watch?v=...`
-
----
-
-## 🛠️ Development
-
-### Backend Development
+#### Backend Development
 ```bash
-cd backend-md
+cd backend
 
-# Quick start
-./start.sh
+# Modo desarrollo con auto-reload
+uv run python main.py
 
-# Manual start with auto-reload
-uv run python run_server.py
+# Agregar dependencias
+uv add nombre_paquete
 
-# Add new dependencies
-uv add package_name
-
-# Update dependencies
+# Actualizar dependencias
 uv sync
 ```
 
-### Frontend Development
+#### Frontend Development
 ```bash
-cd frontend_md
+cd frontend
 
-# Quick start
-./start.sh
-
-# Manual development server with hot reload
+# Servidor de desarrollo con hot reload
 pnpm dev
 
-# Type checking
+# Verificación de tipos
 pnpm run type-check
 
-# Linting
+# Linting y formato
 pnpm run lint
 ```
 
----
+### Despliegue en Producción
 
-## 🚀 Production Deployment
-
-### Backend Production
+#### Backend
 ```bash
-cd backend-md
+cd backend
 
-# Install production dependencies
+# Instalar dependencias de producción
 uv sync --no-dev
 
-# Run production server
-uv run uvicorn main_api:app --host 0.0.0.0 --port 8000 --workers 4
+# Ejecutar servidor de producción
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-### Frontend Production
+#### Frontend
 ```bash
-cd frontend_md
+cd frontend
 
-# Build for production
+# Build para producción
 pnpm build
 
-# Start production server
+# Servidor de producción
 pnpm start
 ```
 
-# Start production server
-pnpm start
+### Cómo Contribuir
+
+1. **Fork** del repositorio
+2. **Crear branch** de funcionalidad: `git checkout -b feature/nueva-funcionalidad`
+3. **Commit** de cambios: `git commit -m 'Agregar nueva funcionalidad'`
+4. **Push** al branch: `git push origin feature/nueva-funcionalidad`
+5. **Crear Pull Request**
+
+### Áreas de Contribución
+- Corrección de bugs y mejoras de estabilidad
+- Nuevas funcionalidades y características
+- Documentación y tutoriales
+- Pruebas y scripts de validación
+- Mejoras de UI/UX y diseño
+
+## Solución de Problemas
+
+### Errores Comunes
+
+#### Backend no inicia
+```bash
+# Verificar instalación de UV
+uv --version
+
+# Reinstalar dependencias
+cd backend && rm -rf .venv && uv sync
+
+# Verificar Python
+python3 --version  # Debería ser 3.13+
 ```
 
----
+#### Frontend no inicia
+```bash
+# Verificar instalación de pnpm
+pnpm --version
 
-## 📁 Detailed Project Structure
-
-```
-audio_downloader/
-├── README.md                           # Project documentation
-├── backend-md/                         # Python FastAPI Backend
-│   ├── app/
-│   │   ├── controllers/
-│   │   │   └── downloader_controllers.py  # Main download logic
-│   │   ├── api/
-│   │   │   └── endpoints/
-│   │   │       └── download.py            # API endpoints
-│   │   ├── models.py                      # Pydantic models
-│   │   ├── settings.py                    # Configuration
-│   │   └── utils.py                       # Utility functions
-│   ├── downloads/                         # Downloaded audio files
-│   ├── main_api.py                        # FastAPI application entry
-│   ├── run_server.py                      # Server launcher script
-│   ├── start.sh                           # Quick start script
-│   ├── pyproject.toml                     # uv dependencies
-│   └── uv.lock                           # Lock file
-└── frontend_md/                          # Next.js Frontend
-    ├── app/                              # Next.js 13+ app directory
-    │   ├── api/download/                 # API routes
-    │   ├── layout.tsx                    # Root layout
-    │   └── page.tsx                      # Home page
-    ├── components/                       # React components
-    ├── lib/                             # Utility libraries
-    ├── start.sh                         # Quick start script
-    ├── package.json                     # Node dependencies
-    └── ...
+# Limpiar cache y reinstalar
+cd frontend && rm -rf node_modules && pnpm install
 ```
 
+#### Puertos ocupados
+```bash
+# Liberar puerto 8000 (backend)
+lsof -ti:8000 | xargs kill -9
+
+# Liberar puerto 3000 (frontend)
+lsof -ti:3000 | xargs kill -9
+```
+
+### Diagnóstico Avanzado
+```bash
+# Verificar spotdl
+spotdl --version
+
+# Verificar conexión del backend
+curl http://localhost:8000/health
+
+# Ver logs detallados
+# Los logs aparecen en la terminal donde ejecutaste main.py
+```
+
+## Stack Tecnológico
+
+### Backend
+- **FastAPI** - Framework web moderno y rápido
+- **Python 3.13+** - Lenguaje de programación
+- **UV** - Gestor de paquetes rápido para Python
+- **spotdl** - Librería para descarga de Spotify
+- **yt-dlp** - Herramienta para descarga de YouTube
+- **asyncio** - Programación asíncrona
+
+### Frontend
+- **Next.js 15+** - Framework React con App Router
+- **TypeScript 5** - JavaScript con tipado estático
+- **Tailwind CSS 4** - Framework CSS utility-first
+- **React 19** - Librería de componentes
+- **pnpm** - Gestor de paquetes rápido
+
+### Dependencias Clave
+```json
+{
+  "backend": [
+    "fastapi>=0.103.2", "uvicorn>=0.23.2", "spotdl>=4.4.2", 
+    "yt-dlp>=2025.9.26", "pydantic-settings>=2.11.0", "ffmpeg-python>=0.2.0"
+  ],
+  "frontend": [
+    "next@15.2.4", "react@19", "typescript@5",
+    "@radix-ui/react-*", "lucide-react", "tailwindcss@4.1.9"
+  ]
+}
+```
+
+## Métricas del Proyecto
+
+### Estadísticas de Código
+- **~3,000 líneas** de código total (reorganizado y optimizado)
+- **10+ endpoints** API documentados
+- **4 calidades** de audio soportadas (96, 128, 192, 320 kbps)
+- **3 plataformas** principales soportadas (Spotify, YouTube, YouTube Music)
+- **Arquitectura modular** con separación de responsabilidades
+
+### Rendimiento
+- **<2 segundos** tiempo promedio de inicio de descarga
+- **Progreso en tiempo real** con actualizaciones cada 500ms
+- **Descarga directa** usando spotdl subprocess (más rápido y confiable)
+- **Corrección automática** de extensiones problemáticas
+
+## Licencia y Disclaimer
+
+### Licencia
+Este proyecto está licenciado bajo los términos especificados en [LICENSE](LICENSE).
+
+### Uso Responsable
+**Esta herramienta es para uso educativo y personal únicamente.** 
+
+- Respeta los derechos de autor y términos de servicio de las plataformas
+- Asegúrate de tener derecho a descargar y usar el contenido
+- No uses esta herramienta para piratería o distribución no autorizada
+- El proyecto no se hace responsable del uso indebido de la herramienta
+
+## Enlaces Útiles
+
+- **Documentación API**: [http://localhost:8000/docs](http://localhost:8000/docs) (cuando el servidor esté ejecutándose)
+- **Reportar bugs**: [GitHub Issues](https://github.com/pabrax/LocalSongs/issues)
+- **Discusiones**: [GitHub Discussions](https://github.com/pabrax/LocalSongs/discussions)
+- **spotdl Documentation**: [https://github.com/spotDL/spotify-downloader](https://github.com/spotDL/spotify-downloader)
+
+## Agradecimientos
+
+- **spotdl** - Por la excelente integración con Spotify
+- **yt-dlp** - Por el robusto soporte de YouTube  
+- **FastAPI** - Por el framework backend moderno
+- **Next.js** - Por el framework frontend excepcional
+- **Comunidad Open Source** - Por las herramientas y librerías
+
 ---
 
-## 🤝 Contributing
+<div align="center">
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+**Desarrollado con ❤️ por [pabrax](https://github.com/pabrax)**
 
----
+![Made with FastAPI](https://img.shields.io/badge/Made%20with-FastAPI-009688.svg?style=flat-square&logo=fastapi)
+![Made with Next.js](https://img.shields.io/badge/Made%20with-Next.js-000000.svg?style=flat-square&logo=next.js)
+![Made with TypeScript](https://img.shields.io/badge/Made%20with-TypeScript-3178C6.svg?style=flat-square&logo=typescript)
 
-## ⚠️ Disclaimer
+**¡Si te gusta este proyecto, considera darle una estrella!**
 
-This tool is for educational and personal use only. Please respect copyright laws and the terms of service of the platforms you're downloading from. Always ensure you have the right to download and use the content.
-
----
-
-**Built with ❤️ using FastAPI, Next.js, and modern web technologies**
+</div>

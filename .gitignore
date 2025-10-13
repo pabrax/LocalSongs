@@ -1,0 +1,198 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+.env/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# UV Package manager
+.venv/
+uv.lock
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+*.tmp
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+
+# Logs
+logs
+*.log
+
+# Music files and downloads (IMPORTANT: Ignore all downloaded music)
+*.mp3
+*.mp4
+*.wav
+*.flac
+*.m4a
+*.aac
+*.ogg
+*.wma
+*.webm
+*.mkv
+*.avi
+*.mov
+
+# Downloads folder contents (keep folder structure but ignore downloaded files)
+backend/downloads/*
+!backend/downloads/.gitkeep
+frontend/downloads/*
+!frontend/downloads/.gitkeep
+downloads/*
+!downloads/.gitkeep
+
+# Audio metadata
+*.m3u
+*.m3u8
+*.pls
+
+# Temporary download files
+*.part
+*.crdownload
+*.tmp
+*.temp
+
+# FFmpeg temporary files
+ffmpeg*
+temp_*
+*.ffmpeg
+
+# Spotify temporary files
+spotify_temp*/
+.spotify*/
+
+# YouTube-dl / yt-dlp cache
+youtube-dl-cache/
+yt-dlp-cache/
+.cache/
+
+# SpotDL cache and temporary files
+.spotdl/
+*.spotdl
+
+# Testing and temporary files
+test_downloads/
+temp_downloads/
+*.test.mp3
+*_test.*
+
+# OS generated files
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
