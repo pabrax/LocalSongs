@@ -37,12 +37,32 @@ class MultiDownloadResult:
         self.download_folder = download_folder
 
 class MultiMusicDownloader:
-    """Enhanced music downloader for albums and playlists."""
+    """Downloads music from multiple platforms with multi-file support."""
     
-    def __init__(self):
-        self.single_downloader = MusicDownloader()
-        self.max_files_per_download = 50  # Safety limit
-        self.max_concurrent_downloads = 1  # Sequential for now
+    def __init__(self, output_dir: str = "./downloads", max_files_per_download: int = 50):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.max_files_per_download = max_files_per_download
+        
+    def _get_spotdl_command(self):
+        """Get the appropriate spotdl command based on environment."""
+        # Check if we're in a uv environment
+        if os.environ.get('VIRTUAL_ENV'):
+            # We're in a virtual environment, check if it's uv
+            return ["uv", "run", "spotdl"]
+        else:
+            # Use regular spotdl command
+            return ["spotdl"]
+        
+    def _get_spotdl_command(self) -> List[str]:
+        """Get the correct spotdl command based on environment"""
+        # Check if we're running in a uv environment
+        if os.environ.get('VIRTUAL_ENV') or os.environ.get('UV_PROJECT_ENVIRONMENT'):
+            # We're in a uv environment, use uv run
+            return ['uv', 'run', 'spotdl']
+        else:
+            # Try regular spotdl first
+            return ['spotdl']
         
     def get_playlist_info(self, url: str) -> Tuple[bool, Dict[str, Any]]:
         """Get information about a playlist/album without downloading."""
@@ -50,13 +70,17 @@ class MultiMusicDownloader:
             # Validate URL first
             is_valid, platform = URLValidator.is_valid_url(url)
             if not is_valid:
+                logger.warning(f"Invalid URL for playlist: {url}")
                 return False, {"error": "Invalid URL"}
+            
+            logger.info(f"Processing playlist URL as {platform}: {url}")
             
             if platform == "spotify":
                 return self._get_spotify_playlist_info(url)
             elif platform in ["youtube", "youtube_music"]:
                 return self._get_youtube_playlist_info(url)
             else:
+                logger.warning(f"Platform {platform} not supported for playlists")
                 return False, {"error": "Platform not supported for playlists"}
                 
         except Exception as e:
@@ -67,38 +91,58 @@ class MultiMusicDownloader:
         """Get Spotify playlist/album information."""
         try:
             # Use spotdl save to get playlist info (save doesn't download, just lists)
-            temp_file = f"/tmp/spotify_info_{os.getpid()}.txt"
+            temp_file = f"/tmp/spotify_info_{os.getpid()}.spotdl"
             
-            cmd = [
-                "spotdl", "save", url, 
+            cmd = self._get_spotdl_command() + [
+                "save", url, 
                 "--save-file", temp_file,
                 "--output", "{artist} - {name}"
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            logger.info(f"Executing spotdl command: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             
             if result.returncode == 0 and os.path.exists(temp_file):
-                # Read the saved file to get track list
-                with open(temp_file, 'r', encoding='utf-8') as f:
-                    tracks = [line.strip() for line in f.readlines() if line.strip()]
-                
-                # Clean up temp file
+                # Read the saved file to get track list (it's JSON format)
                 try:
-                    os.remove(temp_file)
-                except:
-                    pass
+                    with open(temp_file, 'r', encoding='utf-8') as f:
+                        tracks_data = json.load(f)
+                    
+                    # Extract track names from JSON
+                    tracks = []
+                    for track in tracks_data:
+                        if isinstance(track, dict) and 'name' in track and 'artists' in track:
+                            artists = ', '.join([artist if isinstance(artist, str) else artist.get('name', 'Unknown') 
+                                               for artist in track['artists']])
+                            track_name = f"{artists} - {track['name']}"
+                            tracks.append(track_name)
                 
-                # Determine if it's an album or playlist
-                content_type = "album" if "/album/" in url else "playlist" if "/playlist/" in url else "track"
+                    # Clean up temp file
+                    try:
+                        os.remove(temp_file)
+                    except:
+                        pass
                 
-                # Extract title from URL or use default
-                title = f"Spotify {content_type.title()}"
-                if tracks:
+                    # Determine if it's an album or playlist
+                    content_type = "album" if "/album/" in url else "playlist" if "/playlist/" in url else "track"
+                
+                    # Extract title from first track or use default
+                    title = f"Spotify {content_type.title()}"
+                    if tracks_data and isinstance(tracks_data[0], dict):
+                        # Try to get album name for better title
+                        if 'album' in tracks_data[0] and isinstance(tracks_data[0]['album'], dict):
+                            title = tracks_data[0]['album'].get('name', title)
+                        elif content_type == "playlist":
+                            title = f"Spotify Playlist"
                     # Try to extract a common artist or use first track info
                     first_track = tracks[0] if tracks else "Unknown"
                     if " - " in first_track:
                         artist_part = first_track.split(" - ")[0]
                         title = f"{artist_part} - {content_type.title()}"
+                
+                except Exception as e:
+                    logger.error(f"Error parsing JSON file: {e}")
+                    return False, {"error": f"Error parsing playlist data: {str(e)}"}
                 
                 return True, {
                     "type": content_type,
@@ -110,7 +154,13 @@ class MultiMusicDownloader:
                     "limited": len(tracks) > self.max_files_per_download
                 }
             else:
-                logger.error(f"Spotdl save error: {result.stderr}")
+                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                stdout_msg = result.stdout.strip() if result.stdout else "No output"
+                logger.error(f"Spotdl command failed: {error_msg}")
+                logger.error(f"Spotdl command: {' '.join(cmd)}")
+                logger.error(f"Spotdl stdout: {stdout_msg}")
+                logger.error(f"Spotdl return code: {result.returncode}")
+                
                 # Fallback: try to determine basic info from URL
                 content_type = "album" if "/album/" in url else "playlist" if "/playlist/" in url else "track"
                 
@@ -303,8 +353,8 @@ class MultiMusicDownloader:
                 progress_tracker.update_overall("downloading", f"Descargando {total_files} archivos de Spotify")
             
             # Use spotdl to download entire playlist/album
-            download_cmd = [
-                "spotdl", "download", url,
+            download_cmd = self._get_spotdl_command() + [
+                "download", url,
                 "--output", download_folder,
                 "--format", "mp3",
                 "--bitrate", f"{quality.value}k",

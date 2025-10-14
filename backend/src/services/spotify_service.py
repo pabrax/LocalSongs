@@ -104,11 +104,21 @@ class SpotifyDownloader:
                 error=f"Error descargando playlist: {str(e)}"
             )]
     
+    def _get_spotdl_command(self) -> List[str]:
+        """Get the correct spotdl command based on environment"""
+        # Check if we're running in a uv environment
+        if os.environ.get('VIRTUAL_ENV') or os.environ.get('UV_PROJECT_ENVIRONMENT'):
+            # We're in a uv environment, use uv run
+            return ['uv', 'run', 'spotdl']
+        else:
+            # Try regular spotdl first
+            return ['spotdl']
+    
     def _check_spotdl_available(self) -> bool:
         """Check if spotdl is available in system PATH"""
         try:
-            result = subprocess.run(['spotdl', '--version'], 
-                                  capture_output=True, text=True, timeout=10)
+            cmd = self._get_spotdl_command() + ['--version']
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
@@ -121,7 +131,7 @@ class SpotifyDownloader:
                 temp_path = temp_file.name
             
             # Use spotdl save to get track info
-            cmd = ['spotdl', 'save', spotify_url, '--save-file', temp_path]
+            cmd = self._get_spotdl_command() + ['save', spotify_url, '--save-file', temp_path]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0 and os.path.exists(temp_path):
@@ -188,8 +198,7 @@ class SpotifyDownloader:
             temp_dir = tempfile.mkdtemp(prefix="spotdl_download_")
             
             # Build spotdl command
-            cmd = [
-                'spotdl',
+            cmd = self._get_spotdl_command() + [
                 spotify_url,
                 '--output', temp_dir,
                 '--bitrate', str(quality.value),
@@ -294,8 +303,7 @@ class SpotifyDownloader:
             temp_dir = tempfile.mkdtemp(prefix="spotdl_playlist_")
             
             # Build command for playlist
-            cmd = [
-                'spotdl',
+            cmd = self._get_spotdl_command() + [
                 spotify_url,
                 '--output', temp_dir,
                 '--bitrate', str(quality.value),

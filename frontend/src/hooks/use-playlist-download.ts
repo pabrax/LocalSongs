@@ -243,6 +243,10 @@ export function usePlaylistDownload(): UsePlaylistDownloadResult {
             // Si es exitoso, mostrar mensaje de éxito y refrescar archivos
             if (progressData.overall_status === 'completed' || progressData.overall_status === 'success') {
               console.log(`Playlist descargado: ${progressData.completed_files}/${progressData.total_files} archivos`)
+              // Establecer que el ZIP está listo para descarga
+              if (downloadResponse.download_id) {
+                setZipFile(`/api/v1/download-zip/${downloadResponse.download_id}`)
+              }
               // Refrescar lista de archivos descargados
               setTimeout(() => {
                 refreshDownloadedFiles()
@@ -291,52 +295,25 @@ export function usePlaylistDownload(): UsePlaylistDownloadResult {
       return false
     }
 
-    setIsCreatingZip(true)
-    setError(null)
-
-    try {
-      const response = await fetch(`/api/create-zip/${downloadId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Error creating ZIP file')
-      }
-
-      if (result.success && result.zip_file) {
-        setZipFile(result.zip_file)
-        return true
-      } else {
-        throw new Error(result.error || 'Failed to create ZIP file')
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error creating ZIP'
-      setError(errorMessage)
-      return false
-    } finally {
-      setIsCreatingZip(false)
-    }
+    // El ZIP ya está disponible directamente desde el backend
+    setZipFile(`/api/v1/download-zip/${downloadId}`)
+    return true
   }, [downloadId])
 
   const downloadZip = useCallback(() => {
-    if (!zipFile) {
+    if (!zipFile || !downloadId) {
       setError("No hay archivo ZIP disponible para descargar")
       return
     }
 
     try {
-      const filename = zipFile.split('/').pop() || 'playlist.zip'
-      const downloadUrl = `/api/download-file/${filename}`
+      // Usar el endpoint directo del backend
+      const downloadUrl = `/api/v1/download-zip/${downloadId}`
       
       // Create a temporary link and trigger download
       const link = document.createElement('a')
       link.href = downloadUrl
-      link.download = filename
+      link.download = `playlist_${downloadId}.zip`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -344,7 +321,7 @@ export function usePlaylistDownload(): UsePlaylistDownloadResult {
       console.error('Error triggering download:', err)
       setError('Error downloading ZIP file')
     }
-  }, [zipFile])
+  }, [zipFile, downloadId])
 
   const cleanupFiles = useCallback(async (keepZip: boolean = true): Promise<boolean> => {
     if (!downloadId) {

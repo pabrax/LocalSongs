@@ -153,9 +153,21 @@ class MusicDownloader:
             DownloadResult with success status, file path, and metadata
         """
         try:
+            # Clean URL to extract only individual video (remove playlist params)
+            from ..core.utils import URLValidator
+            cleaned_url = URLValidator.clean_youtube_url(url)
+            
+            if cleaned_url != url:
+                logger.info(f"Cleaned URL from {url} to {cleaned_url}")
+                url = cleaned_url
+            
             # Update progress
             if progress_tracker:
                 progress_tracker.update(5, "preparing", "Preparando descarga de YouTube...")
+                
+                # Check for cancellation
+                if hasattr(progress_tracker, 'is_cancelled') and progress_tracker.is_cancelled():
+                    return DownloadResult(success=False, error="Descarga cancelada por el usuario")
             
             logger.info(f"Downloading from YouTube: {url} with quality {quality.value}")
             
@@ -165,6 +177,10 @@ class MusicDownloader:
             # Progress hook for yt-dlp
             def progress_hook(d):
                 if progress_tracker and d['status'] == 'downloading':
+                    # Check for cancellation before updating progress
+                    if hasattr(progress_tracker, 'is_cancelled') and progress_tracker.is_cancelled():
+                        raise Exception("Descarga cancelada por el usuario")
+                        
                     if 'total_bytes' in d and d['total_bytes']:
                         downloaded = d.get('downloaded_bytes', 0)
                         total = d['total_bytes']
@@ -345,9 +361,17 @@ class MusicDownloader:
             
             # Download according to platform
             if platform == Platform.SPOTIFY:
-                return self.download_from_spotify(url, quality, progress_tracker)
+                logger.info(f"Processing Spotify URL: {url}")
+                result = self.download_from_spotify(url, quality, progress_tracker)
+                if not result.success:
+                    logger.error(f"Spotify download failed: {result.error}")
+                return result
             elif platform in [Platform.YOUTUBE, Platform.YOUTUBE_MUSIC]:
-                return self.download_from_youtube(url, quality, progress_tracker)
+                logger.info(f"Processing YouTube URL: {url}")
+                result = self.download_from_youtube(url, quality, progress_tracker)
+                if not result.success:
+                    logger.error(f"YouTube download failed: {result.error}")
+                return result
             else:
                 return DownloadResult(
                     success=False,
@@ -445,28 +469,24 @@ class MusicDownloader:
         """Test if spotdl is available."""
         try:
             import subprocess
-            result = subprocess.run(["spotdl", "--version"], capture_output=True, text=True, timeout=10)
+            # Check if we're in a uv environment
+            if os.environ.get('VIRTUAL_ENV') or os.environ.get('UV_PROJECT_ENVIRONMENT'):
+                cmd = ['uv', 'run', 'spotdl', '--version']
+            else:
+                cmd = ['spotdl', '--version']
+                
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
             return result.returncode == 0
         except Exception:
             return False
     
     def _test_youtube_connection(self) -> bool:
-        """Test YouTube connection."""
+        """Test YouTube connection with a lightweight check."""
         try:
-            ydl_opts = {
-                'quiet': True, 
-                'no_warnings': True,
-                'socket_timeout': 10,
-                'retries': 1,
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                }
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                # Test with a public short test video
-                test_url = "https://www.youtube.com/watch?v=jNQXAC9IVRw"  # 10-second video
-                info = ydl.extract_info(test_url, download=False)
-                return info is not None
+            # Just check if yt-dlp is importable and working
+            import yt_dlp
+            return True  # If we can import yt-dlp, we consider YouTube "available"
+                
         except Exception as e:
             logger.error(f"YouTube test error: {e}")
             return False

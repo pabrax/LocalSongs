@@ -47,6 +47,21 @@ export function PlaylistInfoWithDownloads({
   maxVisibleTracks = 10,
   showZipControls = false
 }: PlaylistInfoWithDownloadsProps) {
+  // Verificación defensiva para prevenir errores de undefined
+  if (!playlistInfo) {
+    return null
+  }
+  
+  // Asegurar que las propiedades críticas existan
+  const safePlaylistInfo = {
+    ...playlistInfo,
+    tracks: playlistInfo.tracks || [],
+    type: playlistInfo.type || 'unknown',
+    platform: playlistInfo.platform || 'unknown',
+    title: playlistInfo.title || 'Unknown Title',
+    total_tracks: playlistInfo.total_tracks || 0
+  }
+  
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case "spotify":
@@ -100,11 +115,11 @@ export function PlaylistInfoWithDownloads({
     )
   }
 
-  const visibleTracks = showTrackList 
-    ? playlistInfo.tracks.slice(0, maxVisibleTracks)
+  const visibleTracks = showTrackList && safePlaylistInfo.tracks
+    ? safePlaylistInfo.tracks.slice(0, maxVisibleTracks)
     : []
   
-  const hasMoreTracks = playlistInfo.tracks.length > maxVisibleTracks
+  const hasMoreTracks = safePlaylistInfo.tracks ? safePlaylistInfo.tracks.length > maxVisibleTracks : false
   const downloadedCount = downloadedFiles.length
 
   return (
@@ -113,15 +128,15 @@ export function PlaylistInfoWithDownloads({
       <div className="space-y-3">
         <div className="flex items-start gap-4">
           <div className="text-3xl">
-            {getTypeIcon(playlistInfo.type)}
+            {getTypeIcon(safePlaylistInfo.type)}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-xl text-slate-100 truncate">
-              {playlistInfo.title}
+              {safePlaylistInfo.title}
             </h3>
-            {playlistInfo.uploader && (
+            {safePlaylistInfo.uploader && (
               <p className="text-sm text-slate-400 truncate mt-1">
-                por {playlistInfo.uploader}
+                por {safePlaylistInfo.uploader}
               </p>
             )}
           </div>
@@ -129,16 +144,16 @@ export function PlaylistInfoWithDownloads({
 
         {/* Badges */}
         <div className="flex flex-wrap gap-2">
-          <Badge className={getTypeColor(playlistInfo.type)}>
-            {getTypeIcon(playlistInfo.type)} {playlistInfo.type.charAt(0).toUpperCase() + playlistInfo.type.slice(1)}
+          <Badge className={getTypeColor(safePlaylistInfo.type)}>
+            {getTypeIcon(safePlaylistInfo.type)} {safePlaylistInfo.type?.charAt(0).toUpperCase() + safePlaylistInfo.type?.slice(1)}
           </Badge>
           
           <Badge variant="outline" className="bg-slate-800/50 text-slate-300 border-slate-600">
-            {getPlatformIcon(playlistInfo.platform)} {playlistInfo.platform.replace('_', ' ').toUpperCase()}
+            {getPlatformIcon(safePlaylistInfo.platform)} {safePlaylistInfo.platform.replace('_', ' ').toUpperCase()}
           </Badge>
           
           <Badge variant="outline" className="bg-slate-800/50 text-slate-300 border-slate-600">
-            📊 {playlistInfo.total_tracks} {playlistInfo.total_tracks === 1 ? 'track' : 'tracks'}
+            📊 {safePlaylistInfo.total_tracks} {safePlaylistInfo.total_tracks === 1 ? 'track' : 'tracks'}
           </Badge>
 
           {downloadedCount > 0 && (
@@ -236,9 +251,9 @@ export function PlaylistInfoWithDownloads({
             })}
           </div>
           
-          {hasMoreTracks && (
+          {hasMoreTracks && safePlaylistInfo.tracks && (
             <div className="text-xs text-slate-500 text-center py-2 border-t border-slate-700">
-              ... y {playlistInfo.tracks.length - maxVisibleTracks} tracks más
+              ... y {safePlaylistInfo.tracks.length - maxVisibleTracks} tracks más
             </div>
           )}
         </div>

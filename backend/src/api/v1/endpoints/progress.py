@@ -31,6 +31,7 @@ class ProgressTracker:
         self.status = "starting"
         self.message = "Iniciando descarga..."
         self.error = None
+        self._cancelled = False
         
     def update(self, progress: int, status: str, message: str, error: Optional[str] = None, filename: Optional[str] = None):
         """Update progress information."""
@@ -41,8 +42,18 @@ class ProgressTracker:
                 "message": message,
                 "error": error,
                 "filename": filename,
-                "timestamp": time.time()
+                "timestamp": time.time(),
+                "cancelled": self._cancelled
             }
+    
+    def cancel(self):
+        """Mark download as cancelled."""
+        self._cancelled = True
+        self.update(0, "cancelled", "Descarga cancelada", "Operación cancelada por el usuario")
+    
+    def is_cancelled(self) -> bool:
+        """Check if download has been cancelled."""
+        return self._cancelled
     
     def get_progress(self) -> Dict[str, Any]:
         """Get current progress information."""
@@ -122,7 +133,13 @@ async def stream_download_progress(download_id: str):
                 
                 # Check if download is complete or failed
                 status = progress_data.get('status', '')
-                if status in ['completed', 'success', 'error', 'failed']:
+                if status in ['completed', 'success']:
+                    # Add download URL to completed progress
+                    progress_data['download_url'] = f"/api/v1/download-zip/{download_id}"
+                    progress_data['ready_for_download'] = True
+                    yield f"data: {json.dumps(progress_data)}\n\n"
+                    break
+                elif status in ['error', 'failed']:
                     break
                 
                 await asyncio.sleep(1)  # Update every second
@@ -181,7 +198,7 @@ async def get_active_downloads():
         with progress_lock:
             active_downloads = {
                 download_id: data for download_id, data in progress_store.items()
-                if data.get('status') not in ['completed', 'success', 'error', 'failed']
+                if data.get('status') not in ['completed', 'success', 'error', 'failed', 'cancelled']
             }
         
         return {
@@ -193,4 +210,31 @@ async def get_active_downloads():
         raise HTTPException(
             status_code=500,
             detail=f"Error getting active downloads: {str(e)}"
+        )
+
+@router.post("/cancel/{download_id}")
+async def cancel_download(download_id: str):
+    """Cancel a download operation."""
+    try:
+        with progress_lock:
+            if download_id in progress_store:
+                # Mark as cancelled in the store
+                progress_store[download_id]["status"] = "cancelled"
+                progress_store[download_id]["message"] = "Descarga cancelada"
+                progress_store[download_id]["cancelled"] = True
+                
+                logger.info(f"Download {download_id} marked as cancelled")
+                return {"success": True, "message": "Descarga cancelada"}
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Download {download_id} not found"
+                )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelling download: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error cancelling download: {str(e)}"
         )

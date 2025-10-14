@@ -23,10 +23,22 @@ class URLValidator:
     
     YOUTUBE_PATTERNS = [
         r'https?://(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
+        r'https?://(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)&.*',  # With additional parameters
         r'https?://youtu\.be/([a-zA-Z0-9_-]+)',
+        r'https?://youtu\.be/([a-zA-Z0-9_-]+)\?.*',  # With parameters like ?si=
         r'https?://(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]+)',
         r'https?://music\.youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
-        r'https?://music\.youtube\.com/playlist\?list=([a-zA-Z0-9_-]+)'
+        r'https?://music\.youtube\.com/watch\?v=([a-zA-Z0-9_-]+)&.*',  # YouTube Music with parameters
+        r'https?://music\.youtube\.com/playlist\?list=([a-zA-Z0-9_-]+)',
+        r'https?://music\.youtube\.com/playlist\?list=([a-zA-Z0-9_-]+)&.*',  # YouTube Music playlist with parameters
+        # YouTube Playlists
+        r'https?://(?:www\.)?youtube\.com/playlist\?list=([a-zA-Z0-9_-]+)',
+        r'https?://(?:www\.)?youtube\.com/playlist\?list=([a-zA-Z0-9_-]+)&.*',  # With parameters
+        # Additional YouTube URL formats
+        r'https?://(?:www\.)?youtube\.com/v/([a-zA-Z0-9_-]+)',
+        r'https?://(?:www\.)?youtube\.com/user/[^/]+/watch\?v=([a-zA-Z0-9_-]+)',
+        r'https?://(?:m\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
+        r'https?://(?:m\.)?youtu\.be/([a-zA-Z0-9_-]+)',
     ]
     
     @staticmethod
@@ -44,6 +56,47 @@ class URLValidator:
     def is_valid_youtube_url(url: str) -> bool:
         """Validate if it's a valid YouTube URL."""
         return any(re.match(pattern, url) for pattern in URLValidator.YOUTUBE_PATTERNS)
+    
+    @staticmethod
+    def clean_youtube_url(url: str) -> str:
+        """
+        Clean YouTube URL to extract only the individual video, removing playlist parameters.
+        This prevents downloading entire playlists when user wants just one video.
+        """
+        import urllib.parse as urlparse
+        
+        try:
+            parsed = urlparse.urlparse(url)
+            
+            # For youtu.be URLs
+            if 'youtu.be' in parsed.netloc:
+                video_id = parsed.path.lstrip('/')
+                if video_id:
+                    return f"https://www.youtube.com/watch?v={video_id}"
+            
+            # For youtube.com URLs
+            elif 'youtube.com' in parsed.netloc:
+                query_params = urlparse.parse_qs(parsed.query)
+                video_id = query_params.get('v', [None])[0]
+                
+                if video_id:
+                    # Return clean URL with only the video ID
+                    return f"https://www.youtube.com/watch?v={video_id}"
+            
+            # For music.youtube.com URLs
+            elif 'music.youtube.com' in parsed.netloc:
+                query_params = urlparse.parse_qs(parsed.query)
+                video_id = query_params.get('v', [None])[0]
+                
+                if video_id:
+                    return f"https://music.youtube.com/watch?v={video_id}"
+            
+            # If we can't parse it, return original
+            return url
+            
+        except Exception as e:
+            logger.warning(f"Error cleaning YouTube URL {url}: {e}")
+            return url
     
     @staticmethod
     def is_valid_url(url: str) -> Tuple[bool, Optional[str]]:
